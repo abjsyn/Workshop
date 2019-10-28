@@ -13,6 +13,6 @@ variable "subnet1_spoke_name"{
 }
 
 variable "spoke_subnet1_preffix" {
-   type = "list"
+   
 }
 
