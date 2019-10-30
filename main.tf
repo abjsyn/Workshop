@@ -3,7 +3,7 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "RG" {
-    name = "st-rgxxx"
+    name = "st-rgxxxx"
     location = "WestEurope"
 }
 
