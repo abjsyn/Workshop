@@ -44,6 +44,24 @@ variable "vnet_hub_nsg_name" {
   
 }
 
+### VPN ###
+/*
+variable "gwPIP_name" {}
+variable "gwName" {}
+
+variable "gwSubnetId" {}
+
+variable "localGW_name"{}
+
+variable "localGW_address" {}
+
+variable "localGW_space" {}
+
+variable "vpnConnection_name" {}
+*/
+
+
+
 #### VM ###
 variable "username" {
   
@@ -59,3 +77,4 @@ variable "vm1_name" {
 variable "vm2_name" {
   
 }
+

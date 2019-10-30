@@ -17,6 +17,18 @@ hub_subnet1_preffix = "10.120.1.0/24"
 
 vnet_spoke_nsg_name = "spoke_NSG_RDP_allow"
 vnet_hub_nsg_name = "hub_NSG_RDP_allow"
+/*
+###### GWVPN #####
+gwPIP_name           = "workshop_student_GW_PIP"
+gwName               = "workshop_student_GWVPN"
+
+##### Local network GW ###
+localGW_name         = "LocalGW_VPN"
+localGW_address      = "62.62.62.62"
+localGW_space        = ["192.168.1.0/24"]
+vpnConnection_name   = "VPNConnection_LAB"
+vnetName             = "???ET_HUB"
+*/
 
 ### VM ###
 username = "slawek"
