@@ -3,12 +3,14 @@ provider "azurerm" {
 }
 
 resource "azurerm_resource_group" "RG" {
-    name = "ST-RG1"
+    name = "st-rg3"
     location = "WestEurope"
 }
 
 
 ###### VNET and Subnets #######
+
+### SPOKE ###
 
 resource "azurerm_virtual_network" "Vnet_Spoke"{
     name = "${var.vnet_spoke_name}"
@@ -19,11 +21,235 @@ resource "azurerm_virtual_network" "Vnet_Spoke"{
     depends_on = ["azurerm_resource_group.RG"]
 }
 
-resource "azurerm_subnet" "spoke_subnet"{
+resource "azurerm_subnet" "spoke1_subnet"{
     name = "${var.subnet1_spoke_name}"
     resource_group_name = "${azurerm_resource_group.RG.name}"
     virtual_network_name = "${azurerm_virtual_network.Vnet_Spoke.name}"
     address_prefix = "${var.spoke_subnet1_preffix}"
 }
 
+### HUB ###
 
+resource "azurerm_virtual_network" "Vnet_Hub"{
+    name = "${var.vnet_hub_name}"
+    location = "${azurerm_resource_group.RG.location}"
+    address_space = "${var.address_space_hub}"
+    dns_servers = "${var.dns_servers_hub}"
+    resource_group_name = "${azurerm_resource_group.RG.name}"
+    depends_on = ["azurerm_resource_group.RG"]
+}
+
+resource "azurerm_subnet" "hub1_subnet"{
+    name = "${var.subnet1_hub_name}"
+    resource_group_name = "${azurerm_resource_group.RG.name}"
+    virtual_network_name = "${azurerm_virtual_network.Vnet_Hub.name}"
+    address_prefix = "${var.hub_subnet1_preffix}"
+}
+
+
+### NSG ###
+
+resource "azurerm_network_security_group" "NSG_Spoke"{
+name = "${var.vnet_spoke_nsg_name}"
+resource_group_name = "${azurerm_resource_group.RG.name}"
+location = "${azurerm_resource_group.RG.location}"
+}
+
+resource "azurerm_network_security_rule" "NSGle_Spoke"{
+name                        = "ITA_P_POS_AllowRDP"
+priority                    = 100
+direction                   = "Inbound"
+access                      = "Allow"
+protocol                    = "Tcp"
+source_port_range           = "3389"
+destination_port_range      = "3389"
+source_address_prefix       = "*"
+destination_address_prefix  = "*"
+resource_group_name = "${azurerm_resource_group.RG.name}"
+network_security_group_name ="${azurerm_network_security_group.NSG_Spoke.name}"
+
+}
+
+resource "azurerm_network_security_group" "NSG_Hub"{
+name = "${var.vnet_hub_nsg_name}"
+resource_group_name = "${azurerm_resource_group.RG.name}"
+location = "${azurerm_resource_group.RG.location}"
+}
+
+resource "azurerm_network_security_rule" "NSGle_Hub"{
+name                        = "ITA_P_POS_AllowRDP"
+priority                    = 100
+direction                   = "Inbound"
+access                      = "Allow"
+protocol                    = "Tcp"
+source_port_range           = "3389"
+destination_port_range      = "3389"
+source_address_prefix       = "*"
+destination_address_prefix  = "*"
+resource_group_name = "${azurerm_resource_group.RG.name}"
+network_security_group_name ="${azurerm_network_security_group.NSG_Hub.name}"
+}
+
+resource "azurerm_subnet_network_security_group_association" "NsgAssociationSpoke1" {
+subnet_id = "${azurerm_subnet.spoke1_subnet.id}"
+network_security_group_id = "${azurerm_network_security_group.NSG_Spoke.id}"
+}
+
+resource "azurerm_subnet_network_security_group_association" "NsgAssociationHub1" {
+subnet_id = "${azurerm_subnet.hub1_subnet.id}"
+network_security_group_id = "${azurerm_network_security_group.NSG_Hub.id}"
+}
+
+### Network peering ###
+
+resource "azurerm_virtual_network_peering" "peerSpokeToHub" {
+name = "Spoke_to_HUB_peer" 
+resource_group_name = "${azurerm_resource_group.RG.name}"
+virtual_network_name = "${azurerm_virtual_network.Vnet_Spoke.name}"
+remote_virtual_network_id = "${azurerm_virtual_network.Vnet_Hub.id}"
+allow_virtual_network_access = true
+allow_gateway_transit        = false
+allow_forwarded_traffic      = true
+use_remote_gateways          = false
+
+depends_on =["azurerm_virtual_network.Vnet_Spoke","azurerm_virtual_network.Vnet_Hub"]
+
+}
+
+resource "azurerm_virtual_network_peering" "peerHubtoSpoke" {
+name = "Hub_to_Spoke_peer" 
+resource_group_name = "${azurerm_resource_group.RG.name}"
+virtual_network_name = "${azurerm_virtual_network.Vnet_Hub.name}"
+remote_virtual_network_id = "${azurerm_virtual_network.Vnet_Spoke.id}"
+allow_virtual_network_access = true
+allow_gateway_transit        = false
+allow_forwarded_traffic      = true
+use_remote_gateways          = false
+
+depends_on =["azurerm_virtual_network.Vnet_Spoke","azurerm_virtual_network.Vnet_Hub"]
+
+}
+
+#### VM ####
+
+
+resource "azurerm_network_interface" "nic1"{
+    
+    name = "${var.vm1_name}-nic"
+    location = "${azurerm_resource_group.RG.location}"
+    resource_group_name = "${azurerm_resource_group.RG.name}"
+    internal_dns_name_label = "${var.vm1_name}"
+
+    ip_configuration{
+        name = "primary"
+        subnet_id = "${azurerm_subnet.hub1_subnet.id}"
+        private_ip_address_allocation = "Dynamic"
+        
+    }
+}
+
+resource "azurerm_virtual_machine" "VM1"{
+    name = "${var.vm1_name}-vm"
+    location = "${azurerm_resource_group.RG.location}"
+    resource_group_name = "${azurerm_resource_group.RG.name}"
+    network_interface_ids = ["${azurerm_network_interface.nic1.id}"]
+    vm_size = "Standard_DS2_V2"
+    delete_os_disk_on_termination = true
+
+    storage_image_reference{
+        publisher = "MicrosoftWindowsServer"
+        offer     = "WindowsServer"
+        sku      = "2016-Datacenter"
+        version   = "latest"
+    }
+
+    storage_os_disk {
+        name              = "${var.vm1_name}-disk1"
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Premium_LRS"
+      }
+    
+    os_profile {
+    computer_name  = "${var.vm1_name}"
+    admin_username = "${var.username}"
+    admin_password = "${var.password}"
+    }
+
+    os_profile_windows_config {
+    provision_vm_agent        = true
+    enable_automatic_upgrades = true
+  }
+    
+    storage_data_disk{
+        name = "${var.vm1_name}-datadisk1"
+        caching  = "ReadWrite"
+        create_option = "Empty"
+        disk_size_gb = "128"
+        lun = "1"
+        managed_disk_type = "StandardSSD_LRS"
+
+    }
+
+}
+
+
+resource "azurerm_network_interface" "nic2"{
+    
+    name = "${var.vm2_name}-nic"
+    location = "${azurerm_resource_group.RG.location}"
+    resource_group_name = "${azurerm_resource_group.RG.name}"
+    internal_dns_name_label = "${var.vm2_name}"
+
+    ip_configuration{
+        name = "primary"
+        subnet_id = "${azurerm_subnet.spoke1_subnet.id}"
+        private_ip_address_allocation = "Dynamic"
+        
+    }
+}
+
+resource "azurerm_virtual_machine" "VM2"{
+    name = "${var.vm2_name}-vm"
+    location = "${azurerm_resource_group.RG.location}"
+    resource_group_name = "${azurerm_resource_group.RG.name}"
+    network_interface_ids = ["${azurerm_network_interface.nic2.id}"]
+    vm_size = "Standard_DS2_V2"
+    delete_os_disk_on_termination = true
+
+    storage_image_reference{
+        publisher = "MicrosoftWindowsServer"
+        offer     = "WindowsServer"
+        sku      = "2016-Datacenter"
+        version   = "latest"
+    }
+
+    storage_os_disk {
+        name              = "${var.vm2_name}-disk1"
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Premium_LRS"
+      }
+    
+    os_profile {
+    computer_name  = "${var.vm2_name}"
+    admin_username = "${var.username}"
+    admin_password = "${var.password}"
+    }
+
+    os_profile_windows_config {
+    provision_vm_agent        = true
+    enable_automatic_upgrades = true
+  }
+    
+    storage_data_disk{
+        name = "${var.vm2_name}-datadisk1"
+        caching  = "ReadWrite"
+        create_option = "Empty"
+        disk_size_gb = "128"
+        lun = "1"
+        managed_disk_type = "StandardSSD_LRS"
+
+    }
+
+}
