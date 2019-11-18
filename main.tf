@@ -9,7 +9,7 @@ resource "azurerm_resource_group" "RG1"{
 
 
 resource "azurerm_resource_group" "RG" {
-    name = "st-rgxxxx"
+    name = "st-rg44"
     location = "WestEurope"
 }
 
