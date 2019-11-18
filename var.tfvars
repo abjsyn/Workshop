@@ -1,3 +1,6 @@
+
+rg_name = "slawekrg021"
+
 ### Spoke ###
 vnet_spoke_name = "slawek_spoke_vnet"
 address_space_spoke = ["10.110.0.0/16"]

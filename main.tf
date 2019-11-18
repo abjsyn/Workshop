@@ -2,6 +2,12 @@ provider "azurerm" {
     version = "=1.31.0"  
 }
 
+resource "azurerm_resource_group" "RG1"{
+    name = "${var.rg_name}"
+    location = "west europe"
+}
+
+
 resource "azurerm_resource_group" "RG" {
     name = "st-rgxxxx"
     location = "WestEurope"
