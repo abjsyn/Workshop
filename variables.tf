@@ -1,5 +1,14 @@
 
 ### Spoke ###
+variable "rg_name" {
+  
+}
+
+variable "location" {
+  
+}
+
+
 variable "vnet_spoke_name" {
 }
 variable "address_space_spoke" {
@@ -33,6 +42,14 @@ variable "subnet1_hub_name"{
 
 variable "hub_subnet1_preffix" {
 }
+variable "hub_gatewaysubnet_preffix" {
+  
+}
+
+variable "gatewaySubnetName" {
+  
+}
+
 
 ### NSG ###
 
@@ -49,7 +66,7 @@ variable "vnet_hub_nsg_name" {
 variable "gwPIP_name" {}
 variable "gwName" {}
 
-variable "gwSubnetId" {}
+#variable "gwSubnetId" {}
 
 variable "localGW_name"{}
 
@@ -58,8 +75,8 @@ variable "localGW_address" {}
 variable "localGW_space" {}
 
 variable "vpnConnection_name" {}
-*/
 
+*/
 
 
 #### VM ###

@@ -2,16 +2,11 @@ provider "azurerm" {
     version = "=1.31.0"  
 }
 
-resource "azurerm_resource_group" "RG1"{
+resource "azurerm_resource_group" "RG"{
     name = "${var.rg_name}"
     location = "west europe"
 }
 
-
-resource "azurerm_resource_group" "RG" {
-    name = "st-rg44"
-    location = "WestEurope"
-}
 
 
 ###### VNET and Subnets #######
@@ -52,6 +47,13 @@ resource "azurerm_subnet" "hub1_subnet"{
     address_prefix = "${var.hub_subnet1_preffix}"
 }
 
+resource "azurerm_subnet" "gatewaySubnet"{
+    name = "${var.gatewaySubnetName}"  
+    resource_group_name = "${azurerm_resource_group.RG.name}"
+    virtual_network_name = "${azurerm_virtual_network.Vnet_Hub.name}"
+    address_prefix = "${var.hub_gatewaysubnet_preffix}"
+  
+}
 
 ### NSG ###
 
@@ -136,52 +138,6 @@ depends_on =["azurerm_virtual_network.Vnet_Spoke","azurerm_virtual_network.Vnet_
 
 }
 
-
-### VPN ####
-/*
-resource "azurerm_public_ip" "gwPIP"{
-    name = "${var.gwPIP_name}"
-    resource_group_name = "${var.resource_group_name}"
-    location = "${var.location}"
-    allocation_method =  "Dynamic"
-}
-
-resource "azurerm_virtual_network_gateway" "gwVPN"{
-    name = "${var.gwName}"
-    location = "${var.location}"
-    resource_group_name = "${var.resource_group_name}"
-    type             = "VPN"
-    vpn_type         = "RouteBased"
-    sku              = "VpnGw1"
-
-    ip_configuration{
-        private_ip_address_allocation = "Dynamic"
-        public_ip_address_id          = "${azurerm_public_ip.gwPIP.id}"
-        subnet_id                     = "${var.gwSubnetId}"
-    }
-}
-
-resource "azurerm_local_network_gateway" "localGW"{
-    name = "${var.localGW_name}"
-    location = "${var.location}"
-    resource_group_name = "${var.resource_group_name}"
-    gateway_address = "${var.localGW_address}"
-    address_space = "${var.localGW_space}"
-    
-}
-
-resource "azurerm_virtual_network_gateway_connection" "vpnConnect"{
-name = "${var.vpnConnection_name}"
-location = "${var.location}"
-resource_group_name = "${var.resource_group_name}"
-virtual_network_gateway_id = "${azurerm_virtual_network_gateway.gwVPN.id}"
-local_network_gateway_id   = "${azurerm_local_network_gateway.localGW.id}"
-type = "IPsec"
-shared_key = "1223443454365"
-
-}
-
-*/
 #### VM ####
 
 
