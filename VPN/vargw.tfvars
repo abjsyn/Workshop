@@ -1,4 +1,4 @@
-resource_group_name  = "slawekrg021"
+resource_group_name  = "slawekrg022"
 location             = "westeurope"
 
 ###### GWVPN #####

@@ -7,8 +7,6 @@ resource "azurerm_resource_group" "RG"{
     location = "west europe"
 }
 
-
-
 ###### VNET and Subnets #######
 
 ### SPOKE ###
